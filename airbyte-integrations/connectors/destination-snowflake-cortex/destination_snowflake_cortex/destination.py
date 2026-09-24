@@ -4,9 +4,10 @@
 
 
 import tempfile
+from collections.abc import Iterable, Mapping
 from logging import Logger
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any
 
 from airbyte.secrets import SecretString
 from airbyte.strategies import WriteStrategy
@@ -22,7 +23,11 @@ from airbyte_cdk.models import (
 
 from destination_snowflake_cortex import cortex_processor
 from destination_snowflake_cortex.common.catalog.catalog_providers import CatalogProvider
-from destination_snowflake_cortex.config import ConfigModel, PasswordBasedAuthorizationModel, KeyPairAuthorizationModel
+from destination_snowflake_cortex.config import (
+    ConfigModel,
+    KeyPairAuthorizationModel,
+    PasswordBasedAuthorizationModel,
+)
 
 BATCH_SIZE = 150
 
@@ -31,7 +36,7 @@ class DestinationSnowflakeCortex(Destination):
     sql_processor: cortex_processor.SnowflakeCortexSqlProcessor
 
     def _init_sql_processor(
-        self, config: ConfigModel, configured_catalog: Optional[ConfiguredAirbyteCatalog] = None
+        self, config: ConfigModel, configured_catalog: ConfiguredAirbyteCatalog | None = None
     ):
         sql_config_params: dict[str, Any] = {
             "host": config.indexing.host,
@@ -84,7 +89,7 @@ class DestinationSnowflakeCortex(Destination):
             return AirbyteConnectionStatus(status=Status.SUCCEEDED)
         except Exception as e:
             return AirbyteConnectionStatus(
-                status=Status.FAILED, message=f"An exception occurred: {repr(e)}"
+                status=Status.FAILED, message=f"An exception occurred: {e!r}"
             )
 
     def spec(self, *args: Any, **kwargs: Any) -> ConnectorSpecification:

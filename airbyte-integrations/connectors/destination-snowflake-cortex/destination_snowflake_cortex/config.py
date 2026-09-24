@@ -3,9 +3,10 @@
 #
 
 
+from typing import Literal
+
 from airbyte_cdk.destinations.vector_db_based.config import VectorDBConfigModel
 from pydantic import BaseModel, Field
-from typing import Literal, Union
 
 
 class PasswordBasedAuthorizationModel(BaseModel):
@@ -94,15 +95,23 @@ class SnowflakeCortexIndexingModel(BaseModel):
         examples=["AIRBYTE_USER"],
     )
 
-    credentials: Union[PasswordBasedAuthorizationModel, KeyPairAuthorizationModel] = Field(
+    credentials: PasswordBasedAuthorizationModel | KeyPairAuthorizationModel = Field(
         ...,
         title="Authorization Method",
         description="Choose the authorization method for the Snowflake connection",
         discriminator="auth_type",
         type="object",
         oneOf=[
-            {"title": "Username and Password", "required": ["password"], "properties": {"auth_type": {"type": "string", "const": "password"}}},
-            {"title": "Key Pair Authentication", "required": ["private_key"], "properties": {"auth_type": {"type": "string", "const": "key_pair"}}},
+            {
+                "title": "Username and Password",
+                "required": ["password"],
+                "properties": {"auth_type": {"type": "string", "const": "password"}},
+            },
+            {
+                "title": "Key Pair Authentication",
+                "required": ["private_key"],
+                "properties": {"auth_type": {"type": "string", "const": "key_pair"}},
+            },
         ],
     )
 
