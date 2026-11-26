@@ -39,7 +39,7 @@ async def cache_latest_cdk(context: ConnectorContext) -> None:
         Revisiting and aligning how we build Python connectors and using the same container for test, build and publish will provide better control over the CDK version.
         https://github.com/airbytehq/airbyte/issues/25523
     Args:
-        dagger_client (Client): Dagger client.
+        context (ConnectorContext): Connector context.
     """
     # We want the CDK to be re-downloaded on every run per connector to ensure we always get the latest version.
     # But we don't want to invalidate the pip cache on every run because it could lead to a different CDK version installed on different architecture build.
@@ -75,7 +75,8 @@ def never_fail_exec(command: List[str]) -> Callable[[Container], Container]:
     """
 
     def never_fail_exec_inner(container: Container) -> Container:
-        return container.with_exec(["sh", "-c", f"{' '.join(command)}; echo $? > /exit_code"])
+        command_str = " ".join(command)
+        return container.with_exec(["sh", "-c", f"{command_str}; echo $? > /exit_code"])
 
     return never_fail_exec_inner
 
@@ -100,8 +101,8 @@ def do_regression_test_status_check(ctx: click.Context, status_check_name: str, 
             ]
         )
     ):
-        logger.info(f'is_automerge_pull_request={is_automerge_pull_request(ctx.obj.get("pull_request"))}')
-        logger.info(f'git_repo_url={ctx.obj["git_repo_url"]}')
+        logger.info(f"is_automerge_pull_request={is_automerge_pull_request(ctx.obj.get('pull_request'))}")
+        logger.info(f"git_repo_url={ctx.obj['git_repo_url']}")
         for connector in ctx.obj["selected_connectors_with_modified_files"]:
             logger.info(f"connector = {connector.name}")
             logger.info(f"connector.language={connector.language}")

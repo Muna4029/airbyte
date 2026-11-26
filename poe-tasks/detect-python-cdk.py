@@ -97,30 +97,34 @@ def parse_cdk_dependency(pyproject_path) -> dict:
 
 def is_prerelease_version(version_str) -> bool:
     """Check if version string represents a standard published version.
-    
+
     Handles comma-separated version ranges like ">=6.61.6,<7.0" by validating
     each constraint separately. Returns True if any constraint is invalid or
     contains prerelease markers.
     """
     if not version_str:
         return True
-    
+
     parts = [p.strip() for p in version_str.split(",") if p.strip()]
-    
-    constraint_pattern = re.compile(r"^(?:\^|~|~=|==|!=|<=|>=|<|>)?\s*\d+(?:\.\d+){0,2}\s*$")
-    
-    prerelease_pattern = re.compile(r"(?:a|alpha|b|beta|c|rc|pre|preview|dev)\d*$", re.IGNORECASE)
-    
+
+    constraint_pattern = re.compile(
+        r"^(?:\^|~|~=|==|!=|<=|>=|<|>)?\s*\d+(?:\.\d+){0,2}\s*$"
+    )
+
+    prerelease_pattern = re.compile(
+        r"(?:a|alpha|b|beta|c|rc|pre|preview|dev)\d*$", re.IGNORECASE
+    )
+
     for part in parts:
         if "*" in part or "x" in part.lower():
             return True
-        
+
         if prerelease_pattern.search(part):
             return True
-        
+
         if not constraint_pattern.match(part):
             return True
-    
+
     return False
 
 
@@ -137,13 +141,27 @@ def format_extras_for_poetry(extras) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Detect and analyze airbyte-cdk dependency information", formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Detect and analyze airbyte-cdk dependency information",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("directory", nargs="?", default=".", help="Directory containing pyproject.toml (default: current directory)")
+    parser.add_argument(
+        "directory",
+        nargs="?",
+        default=".",
+        help="Directory containing pyproject.toml (default: current directory)",
+    )
 
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument("--extras-only", action="store_true", help="Return extras string for poetry add command")
-    mode_group.add_argument("--detect-prerelease", action="store_true", help="Verify CDK is pinned to standard version (exit 1 if not)")
+    mode_group.add_argument(
+        "--extras-only",
+        action="store_true",
+        help="Return extras string for poetry add command",
+    )
+    mode_group.add_argument(
+        "--detect-prerelease",
+        action="store_true",
+        help="Verify CDK is pinned to standard version (exit 1 if not)",
+    )
 
     args = parser.parse_args()
 
@@ -179,7 +197,11 @@ def main() -> None:
             )
             sys.exit(1)
 
-        print(f"✅ Production ready CDK version: {cdk_info.get('version')}", flush=True, file=sys.stderr)
+        print(
+            f"✅ Production ready CDK version: {cdk_info.get('version')}",
+            flush=True,
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":
