@@ -7,11 +7,16 @@ from typing import Optional, Union
 import pandas as pd
 from dagster import OpExecutionContext
 from metadata_service.constants import METADATA_FILE_NAME, METADATA_FOLDER
-from metadata_service.models.generated.ConnectorRegistryDestinationDefinition import ConnectorRegistryDestinationDefinition
-from metadata_service.models.generated.ConnectorRegistrySourceDefinition import ConnectorRegistrySourceDefinition
+from metadata_service.models.generated.ConnectorRegistryDestinationDefinition import (
+    ConnectorRegistryDestinationDefinition,
+)
+from metadata_service.models.generated.ConnectorRegistrySourceDefinition import (
+    ConnectorRegistrySourceDefinition,
+)
 
-
-PolymorphicRegistryEntry = Union[ConnectorRegistrySourceDefinition, ConnectorRegistryDestinationDefinition]
+PolymorphicRegistryEntry = Union[
+    ConnectorRegistrySourceDefinition, ConnectorRegistryDestinationDefinition
+]
 
 
 def _get_version_specific_registry_entry_file_path(registry_entry, registry_name):
@@ -19,8 +24,12 @@ def _get_version_specific_registry_entry_file_path(registry_entry, registry_name
     docker_repository = registry_entry.dockerRepository
     docker_version = registry_entry.dockerImageTag
 
-    assumed_metadata_file_path = f"{METADATA_FOLDER}/{docker_repository}/{docker_version}/{METADATA_FILE_NAME}"
-    registry_entry_file_path = assumed_metadata_file_path.replace(METADATA_FILE_NAME, registry_name)
+    assumed_metadata_file_path = (
+        f"{METADATA_FOLDER}/{docker_repository}/{docker_version}/{METADATA_FILE_NAME}"
+    )
+    registry_entry_file_path = assumed_metadata_file_path.replace(
+        METADATA_FILE_NAME, registry_name
+    )
     return registry_entry_file_path
 
 
@@ -83,7 +92,9 @@ def construct_registry_entry_write_path(
     Returns:
         str: The registry entry write path corresponding to the registry entry
     """
-    overrode_registry_entry_version_write_path = _get_version_specific_registry_entry_file_path(registry_entry, registry_name)
+    overrode_registry_entry_version_write_path = (
+        _get_version_specific_registry_entry_file_path(registry_entry, registry_name)
+    )
     _check_for_invalid_write_path(overrode_registry_entry_version_write_path)
     return overrode_registry_entry_version_write_path
 
@@ -113,7 +124,9 @@ def sanitize_docker_repo_name_for_dependency_file(docker_repo_name: str) -> str:
     return docker_repo_name.replace("airbyte/", "")
 
 
-def get_airbyte_slack_users_from_graph(context: OpExecutionContext) -> Optional[pd.DataFrame]:
+def get_airbyte_slack_users_from_graph(
+    context: OpExecutionContext,
+) -> Optional[pd.DataFrame]:
     """
     Get the airbyte slack users from the graph.
 
@@ -131,7 +144,9 @@ def get_airbyte_slack_users_from_graph(context: OpExecutionContext) -> Optional[
     try:
         from orchestrator import defn
 
-        airbyte_slack_users = defn.load_asset_value("airbyte_slack_users", instance=context.instance)
+        airbyte_slack_users = defn.load_asset_value(
+            "airbyte_slack_users", instance=context.instance
+        )
         context.log.info(f"Got airbyte slack users from graph: {airbyte_slack_users}")
         return airbyte_slack_users
     except Exception as e:
