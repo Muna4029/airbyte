@@ -7,9 +7,10 @@ from typing import Optional, Union
 import pandas as pd
 from dagster import OpExecutionContext
 from metadata_service.constants import METADATA_FILE_NAME, METADATA_FOLDER
-from metadata_service.models.generated.ConnectorRegistryDestinationDefinition import ConnectorRegistryDestinationDefinition
-from metadata_service.models.generated.ConnectorRegistrySourceDefinition import ConnectorRegistrySourceDefinition
-
+from metadata_service.models.generated.ConnectorRegistryDestinationDefinition import \
+    ConnectorRegistryDestinationDefinition
+from metadata_service.models.generated.ConnectorRegistrySourceDefinition import \
+    ConnectorRegistrySourceDefinition
 
 PolymorphicRegistryEntry = Union[ConnectorRegistrySourceDefinition, ConnectorRegistryDestinationDefinition]
 
