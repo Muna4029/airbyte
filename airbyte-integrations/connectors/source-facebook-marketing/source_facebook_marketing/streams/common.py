@@ -53,7 +53,9 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
         _, exc, _ = sys.exc_info()
         logger.info(str(exc))
-        logger.info(f"Caught retryable error after {details['tries']} tries. Waiting {details['wait']} more seconds then retrying...")
+        logger.info(
+            f"Caught retryable error after {details['tries']} tries. Waiting {details['wait']} more seconds then retrying..."
+        )
 
     def reduce_request_record_limit(details):
         _, exc, _ = sys.exc_info()
@@ -69,7 +71,9 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
             and exc.api_error_message() in error_patterns
         ):
             # reduce the existing request `limit` param by a half and retry
-            details["kwargs"]["params"]["limit"] = int(int(details["kwargs"]["params"]["limit"]) / 2)
+            details["kwargs"]["params"]["limit"] = int(
+                int(details["kwargs"]["params"]["limit"]) / 2
+            )
             # set the flag to the api class that the last api call failed
             details.get("args")[0].last_api_call_is_successful = True
             # set the flag to the api class that the `limit` param was reduced
@@ -93,27 +97,46 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
 
     def is_transient_cannot_include_error(exc: FacebookRequestError) -> bool:
         """After migration to API v19.0, some customers randomly face a BAD_REQUEST error (OAuthException) with the pattern:"Cannot include ..."
-        According to the last comment in https://developers.facebook.com/community/threads/286697364476462/, this might be a transient issue that can be solved with a retry."""
+        According to the last comment in https://developers.facebook.com/community/threads/286697364476462/, this might be a transient issue that can be solved with a retry.
+        """
         pattern = r"Cannot include .* in summary param because they weren't there while creating the report run."
-        return bool(exc.http_status() == http.client.BAD_REQUEST and re.search(pattern, exc.api_error_message()))
+        return bool(
+            exc.http_status() == http.client.BAD_REQUEST
+            and re.search(pattern, exc.api_error_message())
+        )
 
     def is_graph_batch_exception(exc: FacebookRequestError) -> bool:
         """Check if the error is a GraphBatchException from Facebook's batch API.
-        This error occurs when the batch request is too large or contains failed calls."""
+        This error occurs when the batch request is too large or contains failed calls.
+        """
         if exc.http_status() == http.client.BAD_REQUEST:
-            error_data = getattr(exc, '_error', {})
-            return error_data.get('type') == 'GraphBatchException' or 'GraphBatchException' in exc.api_error_message()
+            error_data = getattr(exc, "_error", {})
+            return (
+                error_data.get("type") == "GraphBatchException"
+                or "GraphBatchException" in exc.api_error_message()
+            )
         return False
 
     def should_retry_api_error(exc):
         if isinstance(exc, FacebookRequestError):
-            call_rate_limit_error = exc.api_error_code() in FACEBOOK_RATE_LIMIT_ERROR_CODES
-            temporary_oauth_error = exc.api_error_code() == FACEBOOK_TEMPORARY_OAUTH_ERROR_CODE
-            batch_timeout_error = exc.http_status() == http.client.BAD_REQUEST and exc.api_error_code() == FACEBOOK_BATCH_ERROR_CODE
+            call_rate_limit_error = (
+                exc.api_error_code() in FACEBOOK_RATE_LIMIT_ERROR_CODES
+            )
+            temporary_oauth_error = (
+                exc.api_error_code() == FACEBOOK_TEMPORARY_OAUTH_ERROR_CODE
+            )
+            batch_timeout_error = (
+                exc.http_status() == http.client.BAD_REQUEST
+                and exc.api_error_code() == FACEBOOK_BATCH_ERROR_CODE
+            )
             unknown_error = exc.api_error_subcode() == FACEBOOK_UNKNOWN_ERROR_CODE
-            connection_reset_error = exc.api_error_code() == FACEBOOK_CONNECTION_RESET_ERROR_CODE
+            connection_reset_error = (
+                exc.api_error_code() == FACEBOOK_CONNECTION_RESET_ERROR_CODE
+            )
             server_error = exc.http_status() == http.client.INTERNAL_SERVER_ERROR
-            service_unavailable_error = exc.http_status() == http.client.SERVICE_UNAVAILABLE
+            service_unavailable_error = (
+                exc.http_status() == http.client.SERVICE_UNAVAILABLE
+            )
             graph_batch_exception = is_graph_batch_exception(exc)
             return any(
                 (
@@ -189,7 +212,9 @@ def traced_exception(fb_exception: FacebookRequestError):
             "with all required permissions."
         )
 
-    elif "An unknown error occurred" in msg and "error_user_title" in fb_exception._error:
+    elif (
+        "An unknown error occurred" in msg and "error_user_title" in fb_exception._error
+    ):
         msg = fb_exception._error["error_user_title"]
         if "profile is not linked to delegate page" in msg or "el perfil no est" in msg:
             failure_type = FailureType.config_error
@@ -204,10 +229,18 @@ def traced_exception(fb_exception: FacebookRequestError):
             "Please reduce the number of fields requested. Go to the schema tab, select your source, "
             "and unselect the fields you do not need."
         )
-    elif "The start date of the time range cannot be beyond 37 months from the current date" in msg:
+    elif (
+        "The start date of the time range cannot be beyond 37 months from the current date"
+        in msg
+    ):
         failure_type = FailureType.config_error
-        friendly_msg = "Please set the start date of your sync to be within the last 3 years."
-    elif (fb_exception.api_error_code(), fb_exception.api_error_subcode()) in FACEBOOK_CONFIG_ERRORS_TO_CATCH:
+        friendly_msg = (
+            "Please set the start date of your sync to be within the last 3 years."
+        )
+    elif (
+        fb_exception.api_error_code(),
+        fb_exception.api_error_subcode(),
+    ) in FACEBOOK_CONFIG_ERRORS_TO_CATCH:
         failure_type = FailureType.config_error
         friendly_msg = msg
     elif fb_exception.api_error_code() in FACEBOOK_RATE_LIMIT_ERROR_CODES:
@@ -227,7 +260,8 @@ def traced_exception(fb_exception: FacebookRequestError):
         )
 
     elif fb_exception.http_status() == 400 and (
-        getattr(fb_exception, '_error', {}).get('type') == 'GraphBatchException' or 'GraphBatchException' in msg
+        getattr(fb_exception, "_error", {}).get("type") == "GraphBatchException"
+        or "GraphBatchException" in msg
     ):
         return AirbyteTracedException(
             message="Facebook's batch API encountered an error while processing multiple requests. This is typically a transient issue. The sync will retry automatically.",
@@ -238,7 +272,11 @@ def traced_exception(fb_exception: FacebookRequestError):
 
     else:
         failure_type = FailureType.system_error
-        error_code = fb_exception.api_error_code() if fb_exception.api_error_code() else fb_exception.http_status()
+        error_code = (
+            fb_exception.api_error_code()
+            if fb_exception.api_error_code()
+            else fb_exception.http_status()
+        )
         friendly_msg = f"Error code {error_code}: {msg}."
 
     return AirbyteTracedException(
